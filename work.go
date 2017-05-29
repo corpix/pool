@@ -22,39 +22,20 @@ package pool
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-type Pool struct {
-	QueueSize int
-	Workers   int
-	Feed      chan *Work
+import (
+	"context"
+)
+
+type Executor func(context.Context)
+
+type Work struct {
+	context.Context
+	Executor
 }
 
-func (p *Pool) open() {
-	n := p.Workers
-
-	for n != 0 {
-		go p.worker()
-		n--
+func NewWork(context context.Context, executor Executor) *Work {
+	return &Work{
+		context,
+		executor,
 	}
-}
-
-func (p *Pool) worker() {
-	for work := range p.Feed {
-		work.Executor(work.Context)
-	}
-}
-
-func (p *Pool) Close() {
-	close(p.Feed)
-}
-
-func New(workers int, queueSize int) *Pool {
-	pool := &Pool{
-		QueueSize: queueSize,
-		Workers:   workers,
-		Feed:      make(chan *Work, queueSize),
-	}
-
-	pool.open()
-
-	return pool
 }

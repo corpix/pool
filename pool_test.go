@@ -23,31 +23,95 @@ package pool
 // THE SOFTWARE.
 
 import (
-	"github.com/stretchr/testify/assert"
+	"context"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPoolParallel(t *testing.T) {
-	p := New(10, 10)
-	defer p.Close()
-
 	tasks := 10
-	sleep := 1 * time.Second
+	workers := 10
+	queue := 10
+	sleep := 100 * time.Millisecond
+
+	p := New(workers, queue)
+	defer p.Close()
 
 	w := &sync.WaitGroup{}
 	w.Add(tasks)
 
 	started := time.Now()
 	for n := 0; n < tasks; n++ {
-		p.Feed <- func() {
-			time.Sleep(sleep)
-			w.Done()
-		}
+		p.Feed <- NewWork(
+			context.Background(),
+			func(ctx context.Context) {
+				select {
+				case <-ctx.Done():
+				case <-time.After(sleep):
+				}
+				w.Done()
+			},
+		)
 	}
 	w.Wait()
 	finished := time.Now()
 
-	assert.False(t, started.Add(2*time.Second).Before(finished))
+	assert.False(
+		t,
+		started.Add(
+			(time.Duration(tasks/queue)*sleep)*2,
+		).Before(finished),
+	)
+}
+
+func TestPoolContextCancel(t *testing.T) {
+	tasks := 5
+	workers := 5
+	queue := 0
+
+	p := New(workers, queue)
+	defer p.Close()
+
+	w := &sync.WaitGroup{}
+	w.Add(tasks)
+
+	cancels := make(chan int, tasks*2)
+	defer close(cancels)
+
+	for n := 0; n < tasks; n++ {
+		ctx, cancel := context.WithCancel(
+			context.Background(),
+		)
+		cancel()
+
+		p.Feed <- NewWork(
+			ctx,
+			func(ctx context.Context) {
+				select {
+				case <-ctx.Done():
+					cancels <- 1
+				}
+				w.Done()
+			},
+		)
+	}
+
+	canceled := 0
+	go func() {
+		for c := range cancels {
+			canceled += c
+			if canceled == tasks {
+				break
+			}
+		}
+		w.Done()
+	}()
+	w.Add(1)
+
+	w.Wait()
+
+	assert.Equal(t, tasks, canceled)
 }
