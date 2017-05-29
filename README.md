@@ -10,6 +10,7 @@ Simplest goroutine pool ever.
 package main
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -28,13 +29,20 @@ func main() {
 
 	for n := 0; n < tasks; n++ {
 		w.Add(1)
-		p.Feed <- func(n int) func() {
-			return func() {
-				time.Sleep(sleep)
-				w.Done()
-				fmt.Printf("Finished work '%d'\n", n)
-			}
-		}(n)
+		p.Feed <- pool.NewWork(
+			context.Background(),
+			func(n int) pool.Executor {
+				return func(ctx context.Context) {
+					select {
+					case <-ctx.Done():
+					default:
+						time.Sleep(sleep)
+						fmt.Printf("Finished work '%d'\n", n)
+					}
+					w.Done()
+				}
+			}(n),
+		)
 	}
 
 	w.Wait()
