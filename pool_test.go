@@ -51,37 +51,3 @@ func TestPoolParallel(t *testing.T) {
 
 	assert.False(t, started.Add(2*time.Second).Before(finished))
 }
-
-func TestPoolParallelQueue(t *testing.T) {
-	p := New(10, 10)
-	defer p.Close()
-
-	tasks := 20
-	sleep := 1 * time.Second
-
-	w := &sync.WaitGroup{}
-	w.Add(tasks)
-
-	started := time.Now()
-	executed := 0
-	lockedTimes := 0
-	for n := 0; n < tasks; n++ {
-		work := func() {
-			executed++
-			time.Sleep(sleep)
-			w.Done()
-		}
-		select {
-		case p.Feed <- work:
-		default:
-			lockedTimes++
-		}
-	}
-	w.Add(-lockedTimes)
-	w.Wait()
-	finished := time.Now()
-
-	assert.False(t, started.Add(2*time.Second).Before(finished))
-	assert.Equal(t, 10, executed)
-	assert.Equal(t, 10, lockedTimes)
-}
