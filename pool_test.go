@@ -63,9 +63,11 @@ func TestPoolParallelQueue(t *testing.T) {
 	w.Add(tasks)
 
 	started := time.Now()
+	executed := 0
 	lockedTimes := 0
 	for n := 0; n < tasks; n++ {
 		work := func() {
+			executed++
 			time.Sleep(sleep)
 			w.Done()
 		}
@@ -80,5 +82,6 @@ func TestPoolParallelQueue(t *testing.T) {
 	finished := time.Now()
 
 	assert.False(t, started.Add(2*time.Second).Before(finished))
+	assert.Equal(t, 10, executed)
 	assert.Equal(t, 10, lockedTimes)
 }
