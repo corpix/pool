@@ -24,6 +24,7 @@ package pool
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -112,4 +113,50 @@ func TestPoolContextCancel(t *testing.T) {
 	w.Wait()
 
 	assert.Equal(t, tasks, canceled)
+}
+
+func TestPoolWithResult(t *testing.T) {
+	tasks := 10
+	workers := 10
+	queue := 10
+	results := make(chan *Result)
+
+	errors := tasks / 2
+	successes := tasks - errors
+
+	p := New(workers, queue)
+	defer p.Close()
+
+	for n := 1; n <= tasks; n++ {
+		p.Feed <- NewWorkWithResult(
+			context.Background(),
+			results,
+			func(n int) ExecutorWithResult {
+				return func(ctx context.Context) (interface{}, error) {
+					if n <= errors {
+						return nil, fmt.Errorf("some error")
+					}
+					return n, nil
+				}
+			}(n),
+		)
+	}
+
+	achievedErrors := 0
+	achievedSuccesses := 0
+	for tasks > 0 {
+		result := <-results
+		if result.Err != nil {
+			achievedErrors++
+		}
+		if result.Value != nil {
+			achievedSuccesses++
+		}
+		tasks--
+	}
+
+	assert.Equal(t, achievedErrors, errors)
+	assert.Equal(t, achievedSuccesses, successes)
+
+	assert.Equal(t, 0, tasks)
 }
