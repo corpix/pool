@@ -61,9 +61,7 @@ func TestPoolParallel(t *testing.T) {
 
 	assert.False(
 		t,
-		started.Add(
-			(time.Duration(tasks/queue)*sleep)*2,
-		).Before(finished),
+		started.Add(sleep*time.Duration(tasks)).Before(finished),
 	)
 }
 
