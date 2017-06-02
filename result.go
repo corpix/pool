@@ -22,36 +22,14 @@ package pool
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-import (
-	"context"
-)
-
-type Work struct {
-	Context  context.Context
-	Executor Executor
+type Result struct {
+	Value interface{}
+	Err   error
 }
 
-func executorWithResultToExecutor(result chan<- *Result, executor ExecutorWithResult) Executor {
-	return func(context context.Context) {
-		v, err := executor(context)
-		if err != nil {
-			result <- NewResult(nil, err)
-			return
-		}
-		result <- NewResult(v, nil)
-	}
-}
-
-func NewWork(context context.Context, executor Executor) *Work {
-	return &Work{
-		Context:  context,
-		Executor: executor,
-	}
-}
-
-func NewWorkWithResult(context context.Context, result chan<- *Result, executor ExecutorWithResult) *Work {
-	return &Work{
-		Context:  context,
-		Executor: executorWithResultToExecutor(result, executor),
+func NewResult(v interface{}, err error) *Result {
+	return &Result{
+		Value: v,
+		Err:   err,
 	}
 }
