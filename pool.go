@@ -36,3 +36,10 @@ func New(workers int, queueSize int) *Pool {
 
 	return pool
 }
+
+func NewFromConfig(c *Config) *Pool {
+	return New(
+		c.Workers,
+		c.QueueSize,
+	)
+}
