@@ -21,9 +21,17 @@ func (p *Pool) worker() {
 	}
 }
 
+//
+
+func (p *Pool) Push(fn *Work) {
+	p.Feed <- fn
+}
+
 func (p *Pool) Close() {
 	close(p.Feed)
 }
+
+//
 
 func New(workers int, queueSize int) *Pool {
 	pool := &Pool{

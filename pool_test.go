@@ -67,10 +67,8 @@ func TestPoolContextCancel(t *testing.T) {
 		p.Feed <- NewWork(
 			ctx,
 			func(ctx context.Context) {
-				select {
-				case <-ctx.Done():
-					cancels <- 1
-				}
+				<-ctx.Done()
+				cancels <- 1
 				w.Done()
 			},
 		)
