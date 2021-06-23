@@ -20,7 +20,7 @@ func main() {
 
 	for n := 0; n < tasks; n++ {
 		w.Add(1)
-		p.Feed <- pool.NewWorkWithResult(
+		p.Push(pool.NewWorkWithResult(
 			context.Background(),
 			results,
 			func(n int) pool.ExecutorWithResult {
@@ -34,7 +34,7 @@ func main() {
 					return n, nil
 				}
 			}(n),
-		)
+		))
 	}
 
 	go func() {
