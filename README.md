@@ -1,7 +1,7 @@
 pool
 ----
 
-[![Build Status](https://travis-ci.org/corpix/pool.svg?branch=master)](https://travis-ci.org/corpix/pool)
+[![Build Status](https://travis-ci.com/corpix/pool.svg?branch=master)](https://travis-ci.com/corpix/pool)
 
 Simplest goroutine pool ever.
 
