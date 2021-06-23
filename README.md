@@ -154,6 +154,3 @@ Finished work '7'
 Received result '7'
 ```
 
-## License
-
-MIT
